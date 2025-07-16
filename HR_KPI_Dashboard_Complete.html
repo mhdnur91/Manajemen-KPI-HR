@@ -1,0 +1,200 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>HR KPI Dashboard Final</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/choices.js/public/assets/scripts/choices.min.js"></script>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/choices.js/public/assets/styles/choices.min.css">
+  <link rel="stylesheet" href="https://cdn.datatables.net/1.13.1/css/jquery.dataTables.min.css">
+  <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+  <script src="https://cdn.datatables.net/1.13.1/js/jquery.dataTables.min.js"></script>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <style>
+    body { padding: 20px; background: #f9fbfd; font-family: 'Segoe UI', sans-serif; }
+    .dashboard-title { font-size: 24px; font-weight: bold; margin-bottom: 20px; text-align: center; }
+    .card { margin-bottom: 20px; border-radius: 10px; }
+    canvas { max-height: 240px; }
+    label { font-weight: 500; margin-bottom: 4px; }
+  </style>
+</head>
+<body>
+  <div class="dashboard-title">📊 MANAGEMENT KPI - HR</div>
+
+  <div class="row mb-4">
+    <div class="col-md-2">
+      <label>Month Year</label>
+      <select id="monthSelect" class="form-select" multiple>
+        <option>Apr-2022</option><option>May-2022</option><option>Jun-2022</option>
+        <option>Jul-2022</option><option>Aug-2022</option><option>Sep-2022</option><option>Oct-2022</option>
+        <option>Apr-2023</option><option>May-2023</option><option>Jun-2023</option>
+      </select>
+    </div>
+    <div class="col-md-2">
+      <label>Financial Year</label>
+      <select id="yearSelect" class="form-select" multiple>
+        <option>2022</option><option>2023</option>
+      </select>
+    </div>
+    <div class="col-md-2">
+      <label>Company</label>
+      <select id="companySelect" class="form-select" multiple>
+        <option>Company 1</option><option>Company 2</option><option>Company 3</option>
+      </select>
+    </div>
+    <div class="col-md-2">
+      <label>Business Unit</label>
+      <select id="unitSelect" class="form-select" multiple>
+        <option>Unit 1</option><option>Unit 2</option><option>Unit 3</option>
+      </select>
+    </div>
+    <div class="col-md-2">
+      <label>Cluster</label>
+      <select id="clusterSelect" class="form-select" multiple>
+        <option>Cluster A</option><option>Cluster B</option><option>Cluster C</option>
+      </select>
+    </div>
+    <div class="col-md-2 d-flex align-items-end">
+      <button class="btn btn-secondary w-100" onclick="resetAll()">Reset</button>
+    </div>
+  </div>
+
+  <div class="row">
+    <div class="col-md-6">
+      <div class="card border-primary">
+        <div class="card-header bg-primary text-white">Training Hours Completion Trend</div>
+        <div class="card-body"><canvas id="chart1"></canvas></div>
+      </div>
+    </div>
+    <div class="col-md-6">
+      <div class="card border-info">
+        <div class="card-header bg-info text-white">Training Program Completion Trend</div>
+        <div class="card-body"><canvas id="chart2"></canvas></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card border-success">
+    <div class="card-header bg-success text-white">Man Power Productivity vs Target</div>
+    <div class="card-body"><canvas id="chart3"></canvas></div>
+  </div>
+
+  <div class="row">
+    <div class="col-md-6">
+      <div class="card border-dark">
+        <div class="card-header bg-dark text-white">Summary Table: Training</div>
+        <div class="card-body">
+          <table id="table1" class="table table-bordered table-striped">
+            <thead><tr><th>Month</th><th>Hours</th><th>Cumulative %</th></tr></thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-6">
+      <div class="card border-secondary">
+        <div class="card-header bg-secondary text-white">Summary Table: Productivity</div>
+        <div class="card-body">
+          <table id="table2" class="table table-bordered table-striped">
+            <thead><tr><th>Month</th><th>Productivity</th><th>Target</th></tr></thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const filters = ['monthSelect','yearSelect','companySelect','unitSelect','clusterSelect'];
+    filters.forEach(id => new Choices('#' + id, { removeItemButton: true, shouldSort: false }));
+
+    const rawData = [
+      {month:'Apr-2022', year:'2022', company:'Company 1', unit:'Unit 1', cluster:'Cluster A', hours:100, cumulative:5, program:1, productivity:8, target:6},
+      {month:'May-2022', year:'2022', company:'Company 2', unit:'Unit 2', cluster:'Cluster B', hours:300, cumulative:15, program:2, productivity:10, target:9},
+      {month:'Jun-2022', year:'2022', company:'Company 3', unit:'Unit 3', cluster:'Cluster C', hours:500, cumulative:25, program:3, productivity:12, target:11},
+      {month:'Apr-2023', year:'2023', company:'Company 1', unit:'Unit 1', cluster:'Cluster A', hours:400, cumulative:20, program:2, productivity:14, target:13},
+      {month:'May-2023', year:'2023', company:'Company 2', unit:'Unit 2', cluster:'Cluster B', hours:700, cumulative:40, program:3, productivity:18, target:15},
+      {month:'Jun-2023', year:'2023', company:'Company 3', unit:'Unit 3', cluster:'Cluster C', hours:650, cumulative:55, program:4, productivity:20, target:18}
+    ];
+
+    function getValues(id) {
+      return Array.from(document.getElementById(id).selectedOptions).map(o => o.value);
+    }
+
+    function resetAll() { location.reload(); }
+
+    function filterData() {
+      const m = getValues('monthSelect'), y = getValues('yearSelect'),
+            c = getValues('companySelect'), u = getValues('unitSelect'), cl = getValues('clusterSelect');
+      return rawData.filter(d =>
+        (m.length==0||m.includes(d.month)) &&
+        (y.length==0||y.includes(d.year)) &&
+        (c.length==0||c.includes(d.company)) &&
+        (u.length==0||u.includes(d.unit)) &&
+        (cl.length==0||cl.includes(d.cluster))
+      );
+    }
+
+    const chart1 = new Chart(document.getElementById('chart1'), {
+      type: 'bar',
+      data: { labels: [], datasets: [
+        { label: 'Training Hours', data: [], backgroundColor: 'rgba(54,162,235,0.7)' },
+        { label: 'Cumulative %', data: [], type: 'line', borderColor: '#f00', fill: false }
+      ]},
+      options: { responsive: true }
+    });
+
+    const chart2 = new Chart(document.getElementById('chart2'), {
+      type: 'bar',
+      data: { labels: [], datasets: [
+        { label: 'Programs Completed', data: [], backgroundColor: 'rgba(75,192,192,0.7)' },
+        { label: '% Completed', data: [], type: 'line', borderColor: '#000', fill: false }
+      ]},
+      options: { responsive: true }
+    });
+
+    const chart3 = new Chart(document.getElementById('chart3'), {
+      type: 'line',
+      data: { labels: [], datasets: [
+        { label: 'Productivity', data: [], borderColor: 'green' },
+        { label: 'Target', data: [], borderColor: 'orange', borderDash: [4,4] }
+      ]},
+      options: { responsive: true }
+    });
+
+    function updateDashboard() {
+      const data = filterData();
+      const labels = data.map(d => d.month);
+
+      chart1.data.labels = labels;
+      chart1.data.datasets[0].data = data.map(d => d.hours);
+      chart1.data.datasets[1].data = data.map(d => d.cumulative);
+      chart1.update();
+
+      chart2.data.labels = labels;
+      chart2.data.datasets[0].data = data.map(d => d.program);
+      chart2.data.datasets[1].data = data.map(d => d.cumulative);
+      chart2.update();
+
+      chart3.data.labels = labels;
+      chart3.data.datasets[0].data = data.map(d => d.productivity);
+      chart3.data.datasets[1].data = data.map(d => d.target);
+      chart3.update();
+
+      const t1 = $('#table1').DataTable();
+      t1.clear().rows.add(data.map(d => [d.month, d.hours, d.cumulative + '%'])).draw();
+
+      const t2 = $('#table2').DataTable();
+      t2.clear().rows.add(data.map(d => [d.month, d.productivity, d.target])).draw();
+    }
+
+    $(document).ready(function() {
+      $('#table1').DataTable();
+      $('#table2').DataTable();
+      filters.forEach(id => document.getElementById(id).addEventListener('change', updateDashboard));
+      updateDashboard();
+    });
+  </script>
+</body>
+</html>
